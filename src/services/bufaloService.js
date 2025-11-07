@@ -1,4 +1,4 @@
-import { get } from "@/lib/apiClient";
+import { get, post } from "@/lib/apiClient";
 import { patch } from "@/lib/apiClient";
 
 /**
@@ -121,10 +121,26 @@ const filtrarBufalosAvancado = async ({
   return response.data;
 };
 
-export default {
+/**
+ * Cria um novo búfalo.
+ * POST /bufalos
+ *
+ * @param {Object} bufaloData - Dados do búfalo a ser criado
+ * @returns {Promise<Object>} Dados do búfalo criado
+ */
+const criarBufalo = async (bufaloData) => {
+  if (!bufaloData) throw new Error("Dados do búfalo são obrigatórios");
+  const response = await post("/bufalos", bufaloData);
+  return response.data;
+};
+
+const bufaloService = {
   listarBufalosPorPropriedade,
   buscarBufaloPorId,
   editarBufalo,
   filtrarBufalosPorSexoStatusPropriedade,
   filtrarBufalosAvancado,
+  criarBufalo,
 };
+
+export default bufaloService;

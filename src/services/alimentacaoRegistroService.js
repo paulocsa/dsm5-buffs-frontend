@@ -56,9 +56,11 @@ const removerRegistroAlimentacao = async (idRegistro) => {
   return response.data;
 };
 
-export default {
+const alimentacaoRegistroService = {
   listarRegistrosPorPropriedade,
   criarRegistroAlimentacao,
   atualizarRegistroAlimentacao,
   removerRegistroAlimentacao,
 };
+
+export default alimentacaoRegistroService;

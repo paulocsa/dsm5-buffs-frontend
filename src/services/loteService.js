@@ -60,9 +60,11 @@ const removerLote = async (id) => {
   }
 };
 
-export default {
+const loteService = {
   listarLotesPorPropriedade,
   atualizarLote,
   criarLote,
   removerLote,
 };
+
+export default loteService;

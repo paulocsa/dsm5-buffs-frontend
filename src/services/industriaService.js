@@ -56,10 +56,12 @@ const criarIndustria = async (data) => {
   return response.data;
 };
 
-export default {
+const industriaService = {
   listarIndustriasPorPropriedade,
   buscarIndustriaPorId,
   atualizarIndustriaPorId,
   removerIndustriaPorId,
   criarIndustria,
 };
+
+export default industriaService;

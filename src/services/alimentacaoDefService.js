@@ -47,9 +47,11 @@ const removerDefinicaoAlimentacao = async (idAlimentDef) => {
   return response.data;
 };
 
-export default {
+const alimentacaoDefService = {
   listarDefinicoesPorPropriedade,
   criarDefinicaoAlimentacao,
   atualizarDefinicaoAlimentacao,
   removerDefinicaoAlimentacao,
 };
+
+export default alimentacaoDefService;

@@ -62,9 +62,11 @@ const removerGrupo = async (id) => {
   }
 };
 
-export default {
+const grupoService = {
   listarGruposPorPropriedade,
   criarGrupo,
   atualizarGrupo,
   removerGrupo,
 };
+
+export default grupoService;

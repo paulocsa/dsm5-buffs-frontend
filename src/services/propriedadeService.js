@@ -39,7 +39,7 @@ const deletarPropriedade = async (id) => {
   return response.data;
 };
 
-export default {
+const propriedadeService = {
   listarPropriedades,
   buscarPropriedadePorId,
   getDashboardStatsByPropriedadeId,
@@ -47,3 +47,5 @@ export default {
   editarPropriedade,
   deletarPropriedade,
 };
+
+export default propriedadeService;

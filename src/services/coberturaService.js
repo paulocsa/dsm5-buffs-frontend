@@ -18,6 +18,43 @@ const listarCoberturasPorPropriedade = async (idPropriedade, page = 1, limit = 1
   return response.data;
 };
 
-export default {
-  listarCoberturasPorPropriedade,
+/**
+ * Lista fêmeas disponíveis para reprodução.
+ * GET /cobertura/femeas/disponiveis-reproducao/{id_propriedade}
+ *
+ * @param {string} idPropriedade - ID da propriedade (obrigatório)
+ * @param {string} [filtro] - Filtro de disponibilidade (opcional)
+ *   - 'todas' = todas fêmeas
+ *   - 'solteiras' = sem cobertura
+ *   - 'vazias' = cobertura falhou
+ *   - 'aptas' = prontas para cobrir (padrão)
+ * @returns {Promise<Array>} Lista de fêmeas disponíveis com informações reprodutivas
+ * 
+ * @example
+ * // Buscar todas as fêmeas aptas para reprodução
+ * const aptas = await listarFemeasDisponiveisReproducao('uuid-propriedade');
+ * 
+ * // Buscar apenas fêmeas sem cobertura
+ * const solteiras = await listarFemeasDisponiveisReproducao('uuid-propriedade', 'solteiras');
+ * 
+ * // Buscar fêmeas com cobertura que falhou
+ * const vazias = await listarFemeasDisponiveisReproducao('uuid-propriedade', 'vazias');
+ */
+const listarFemeasDisponiveisReproducao = async (idPropriedade, filtro = 'aptas') => {
+  if (!idPropriedade) throw new Error("ID da propriedade é obrigatório");
+  
+  const filtrosValidos = ['todas', 'solteiras', 'vazias', 'aptas'];
+  const filtroSeguro = filtrosValidos.includes(filtro) ? filtro : 'aptas';
+  
+  const response = await get(
+    `/cobertura/femeas/disponiveis-reproducao/${idPropriedade}?filtro=${filtroSeguro}`
+  );
+  return response.data;
 };
+
+const coberturaService = {
+  listarCoberturasPorPropriedade,
+  listarFemeasDisponiveisReproducao,
+};
+
+export default coberturaService;

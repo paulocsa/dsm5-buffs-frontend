@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { usePropriedade } from "@/contexts/propriedadeContext";
 import dashboardService from "@/services/dashboardService";
 import bufaloService from "@/services/bufaloService";
+import dadosSanitariosService from "@/services/dadosSanitariosService";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, XAxis, YAxis, Bar } from "recharts";
 import BuffaloModal from "@/components/proprietario/rebanho/prontuarioModal";
+import CriarBufaloModal from "@/components/proprietario/rebanho/CriarBufaloModal";
 
 export default function Rebanho() {
 	// obter id da propriedade via context
@@ -23,6 +25,11 @@ export default function Rebanho() {
 	const [limit, setLimit] = useState(10);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [bufaloSelecionado, setBufaloSelecionado] = useState(null);
+	const [modalCriarBufaloOpen, setModalCriarBufaloOpen] = useState(false);
+
+	// frequência de doenças
+	const [frequenciaDoencas, setFrequenciaDoencas] = useState([]);
+	const [loadingDoencas, setLoadingDoencas] = useState(false);
 
 	useEffect(() => {
 		if (!propriedadeId) {
@@ -71,6 +78,24 @@ export default function Rebanho() {
 		})();
 		return () => { ignore = true; };
 	}, [propriedadeId, page, limit]);
+
+	// buscar frequência de doenças
+	useEffect(() => {
+		if (!propriedadeId) return;
+		let ignore = false;
+		(async () => {
+			setLoadingDoencas(true);
+			try {
+				const data = await dadosSanitariosService.obterFrequenciaDoencasPorPropriedade(propriedadeId);
+				if (!ignore) setFrequenciaDoencas(data.dados || []);
+			} catch (e) {
+				if (!ignore) setFrequenciaDoencas([]);
+			} finally {
+				if (!ignore) setLoadingDoencas(false);
+			}
+		})();
+		return () => { ignore = true; };
+	}, [propriedadeId]);
 
 	// helpers para exibir valores com fallback
 	const totalAtivos =
@@ -267,7 +292,10 @@ export default function Rebanho() {
 				<div className="mb-4">
 					<div className="flex justify-between items-center mb-2">
 						<h2 className="text-2xl font-bold text-gray-800">Registro de Búfalos</h2>
-						<button className="bg-[#FFCF78] hover:bg-[#F2B84D] text-gray-800 font-medium py-2 px-4 rounded-lg">
+						<button
+							className="bg-[#FFCF78] hover:bg-[#F2B84D] text-gray-800 font-medium py-2 px-4 rounded-lg"
+							onClick={() => setModalCriarBufaloOpen(true)}
+						>
 							+ Adicionar Búfalo
 						</button>
 					</div>
@@ -404,7 +432,35 @@ export default function Rebanho() {
 				)}
 			</div>
 
+			{/* Gráfico de Frequência de Doenças */}
+			<div className="w-full flex flex-col bg-white rounded-xl p-5 gap-4 box-border border border-[var(--color-border-primary)] shadow-sm">
+				<h2 className="text-2xl font-bold text-[var(--color-text-dark)]">Frequência de Doenças</h2>
+				{loadingDoencas ? (
+					<p className="text-[var(--color-text-tertiary)]">Carregando dados...</p>
+				) : frequenciaDoencas.length === 0 ? (
+					<p className="text-[var(--color-text-tertiary)]">Nenhum dado disponível</p>
+				) : (
+					<ResponsiveContainer width="100%" height={300}>
+						<BarChart data={frequenciaDoencas} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+							<XAxis dataKey="doenca" stroke="var(--color-text-secondary)" />
+							<YAxis stroke="var(--color-text-secondary)" />
+							<Tooltip contentStyle={{ backgroundColor: 'var(--color-background)', borderColor: 'var(--color-border-primary)' }} />
+							<Bar dataKey="frequencia" fill="var(--color-primary)" />
+						</BarChart>
+					</ResponsiveContainer>
+				)}
+			</div>
+
 			<BuffaloModal open={modalOpen} onClose={() => setModalOpen(false)} idBufalo={bufaloSelecionado} />
+			<CriarBufaloModal
+				open={modalCriarBufaloOpen}
+				onClose={() => setModalCriarBufaloOpen(false)}
+				propriedadeId={propriedadeId}
+				onSuccess={() => {
+					// Atualizar lista de búfalos após criar um novo
+					setPage(1); // Reinicia a paginação para carregar a lista atualizada
+				}}
+			/>
 		</div>
 	);
 }

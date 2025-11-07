@@ -7,7 +7,7 @@ import coletaService from "@/services/coletaService";
 import industriaService from "@/services/industriaService";
 import ColetaDetalhesModal from "@/components/proprietario/industria/ColetaDetalhesModal";
 import ColetaEditModal from "@/components/proprietario/industria/ColetaEditModal";
-import { FiEye, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiEye, FiEdit2, FiTrash2, FiCheckCircle, FiAlertTriangle, FiXCircle } from "react-icons/fi";
 import DeleteIndustriaModal from "@/components/proprietario/industria/DeleteIndustriaModal";
 import DeleteColetaModal from "@/components/proprietario/industria/DeleteColetaModal";
 import IndustriaDetalhesModal from "@/components/proprietario/industria/IndustriaDetalhesModal";
@@ -17,8 +17,8 @@ import IndustriaCreateModal from "@/components/proprietario/industria/IndustriaC
 export default function Industria() {
   const router = useRouter();
   const { propriedadeId } = usePropriedade();
-  const [totalProduzido, setTotalProduzido] = useState(null);
-  const [totalRetiradoMes, setTotalRetiradoMes] = useState(null);
+  const [volumeTotalColetado, setVolumeTotalColetado] = useState(null);
+  const [taxaAprovacao, setTaxaAprovacao] = useState(null);
   const [volumeRejeitadoMes, setVolumeRejeitadoMes] = useState(null);
   const [totalColetas, setTotalColetas] = useState(null);
   const [coletas, setColetas] = useState([]);
@@ -57,42 +57,52 @@ export default function Industria() {
       if (!propriedadeId) {
         setColetas([]);
         setMetaColetas(null);
-        setTotalProduzido(null);
+        setVolumeTotalColetado(null);
         setTotalColetas(null);
-        setTotalRetiradoMes(null);
+        setTaxaAprovacao(null);
+        setVolumeRejeitadoMes(null);
         return;
       }
-      // Total produzido do mês atual
+      // Volume Total Coletado (soma de todas as coletas APROVADAS do mês atual)
       try {
         const now = new Date();
-        const ano = now.getFullYear();
-        const mes = now.getMonth() + 1;
-        let pageProd = 1;
-        let totalProd = 0;
+        const anoAtual = now.getFullYear();
+        const mesAtual = now.getMonth() + 1; // getMonth() retorna 0-11, API usa 1-12
+        let pageCol = 1;
+        let volumeTotal = 0;
         let hasNext = true;
-        const limitProd = 100;
+        const limitCol = 100;
         while (hasNext) {
-          const res =
-            await estoqueLeiteService.listarEstoqueLeitePorPropriedade(
-              propriedadeId,
-              pageProd,
-              limitProd
-            );
+          const res = await coletaService.listarColetasPorPropriedade(
+            propriedadeId,
+            pageCol,
+            limitCol
+          );
           if (Array.isArray(res.data)) {
-            totalProd += res.data
-              .filter((item) => {
-                if (!item.data_producao) return false;
-                const d = new Date(item.data_producao);
-                return d.getFullYear() === ano && d.getMonth() + 1 === mes;
+            volumeTotal += res.data
+              .filter((coleta) => {
+                // Verifica se tem data de coleta
+                if (!coleta.dt_coleta) return false;
+                // Verifica se foi aprovada
+                if (!coleta.resultado_teste) return false;
+                // Extrai ano e mês da data da coleta
+                const partes = coleta.dt_coleta.split('-'); // "2025-11-12"
+                const anoColeta = parseInt(partes[0], 10);
+                const mesColeta = parseInt(partes[1], 10);
+                // Compara com mês/ano atual
+                return anoColeta === anoAtual && mesColeta === mesAtual;
               })
-              .reduce((acc, item) => acc + (Number(item.quantidade) || 0), 0);
+              .reduce(
+                (acc, coleta) => acc + (Number(coleta.quantidade) || 0),
+                0
+              );
           }
           hasNext = res.meta?.hasNextPage;
-          pageProd++;
+          pageCol++;
         }
-        setTotalProduzido(totalProd);
+        setVolumeTotalColetado(volumeTotal);
       } catch (err) {
-        setTotalProduzido("Erro");
+        setVolumeTotalColetado("Erro");
       }
       // Total de coletas (meta)
       try {
@@ -106,48 +116,86 @@ export default function Industria() {
         setTotalColetas("Erro");
       }
 
-      // Total retirado do mês atual
+      // Taxa de Aprovação (% de coletas aprovadas sobre o total DO MÊS ATUAL)
       try {
         const now = new Date();
-        const ano = now.getFullYear();
-        const mes = now.getMonth() + 1;
-        let pageRet = 1;
-        let totalRet = 0;
-        let totalRej = 0;
+        const anoAtual = now.getFullYear();
+        const mesAtual = now.getMonth() + 1;
+        let pageCol = 1;
+        let totalColetasMes = 0;
+        let totalAprovadas = 0;
         let hasNext = true;
-        const limitRet = 100;
+        const limitCol = 100;
         while (hasNext) {
-          const res =
-            await estoqueLeiteService.listarEstoqueLeitePorPropriedade(
-              propriedadeId,
-              pageRet,
-              limitRet
-            );
+          const res = await coletaService.listarColetasPorPropriedade(
+            propriedadeId,
+            pageCol,
+            limitCol
+          );
           if (Array.isArray(res.data)) {
-            // Retirado
-            totalRet += res.data
-              .filter((item) => {
-                if (!item.data_retirada) return false;
-                const d = new Date(item.data_retirada);
-                return d.getFullYear() === ano && d.getMonth() + 1 === mes;
-              })
-              .reduce((acc, item) => acc + (Number(item.quantidade) || 0), 0);
-            // Rejeitado
-            totalRej += res.data
-              .filter((item) => {
-                if (!item.data_rejeicao) return false;
-                const d = new Date(item.data_rejeicao);
-                return d.getFullYear() === ano && d.getMonth() + 1 === mes;
-              })
-              .reduce((acc, item) => acc + (Number(item.quantidade) || 0), 0);
+            res.data.forEach((coleta) => {
+              if (!coleta.dt_coleta) return;
+              // Parse da data no formato YYYY-MM-DD
+              const partes = coleta.dt_coleta.split('-');
+              const anoColeta = parseInt(partes[0], 10);
+              const mesColeta = parseInt(partes[1], 10);
+              // Verifica se é do mês atual
+              if (anoColeta === anoAtual && mesColeta === mesAtual) {
+                totalColetasMes++;
+                if (coleta.resultado_teste) {
+                  totalAprovadas++;
+                }
+              }
+            });
           }
           hasNext = res.meta?.hasNextPage;
-          pageRet++;
+          pageCol++;
         }
-        setTotalRetiradoMes(totalRet);
-        setVolumeRejeitadoMes(totalRej);
+        const taxa = totalColetasMes > 0 ? (totalAprovadas / totalColetasMes) * 100 : 0;
+        setTaxaAprovacao(taxa);
       } catch (err) {
-        setTotalRetiradoMes("Erro");
+        setTaxaAprovacao("Erro");
+      }
+
+      // Volume Rejeitado (soma de coletas REPROVADAS do mês atual)
+      try {
+        const now = new Date();
+        const anoAtual = now.getFullYear();
+        const mesAtual = now.getMonth() + 1;
+        let pageCol = 1;
+        let volumeRejeitado = 0;
+        let hasNext = true;
+        const limitCol = 100;
+        while (hasNext) {
+          const res = await coletaService.listarColetasPorPropriedade(
+            propriedadeId,
+            pageCol,
+            limitCol
+          );
+          if (Array.isArray(res.data)) {
+            volumeRejeitado += res.data
+              .filter((coleta) => {
+                // Verifica se tem data de coleta
+                if (!coleta.dt_coleta) return false;
+                // Verifica se foi REPROVADA
+                if (coleta.resultado_teste) return false;
+                // Extrai ano e mês da data da coleta
+                const partes = coleta.dt_coleta.split('-');
+                const anoColeta = parseInt(partes[0], 10);
+                const mesColeta = parseInt(partes[1], 10);
+                // Compara com mês/ano atual
+                return anoColeta === anoAtual && mesColeta === mesAtual;
+              })
+              .reduce(
+                (acc, coleta) => acc + (Number(coleta.quantidade) || 0),
+                0
+              );
+          }
+          hasNext = res.meta?.hasNextPage;
+          pageCol++;
+        }
+        setVolumeRejeitadoMes(volumeRejeitado);
+      } catch (err) {
         setVolumeRejeitadoMes("Erro");
       }
     }
@@ -233,21 +281,23 @@ export default function Industria() {
             <div className="bg-white p-4 rounded-lg shadow border border-[#e0e0e0]">
               <div className="flex items-center justify-between mb-1">
                 <h2 className="text-sm font-semibold text-[var(--color-text-secondary)]">
-                  Total Produzido
+                  Volume Total Coletado
                 </h2>
                 <span className="text-xs font-medium text-[var(--color-primary-dark)]">
-                  Ativos
+                  Mês atual
                 </span>
               </div>
               <p className="text-4xl font-extrabold tracking-tight text-[var(--color-text-dark)]">
-                {totalProduzido === null
+                {volumeTotalColetado === null
                   ? "..."
-                  : `${totalProduzido.toLocaleString(undefined, {
+                  : volumeTotalColetado === "Erro"
+                  ? "Erro"
+                  : `${volumeTotalColetado.toLocaleString(undefined, {
                       maximumFractionDigits: 2,
                     })} L`}
               </p>
               <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
-                Produção acumulada
+                Coletas do mês atual
               </p>
             </div>
 
@@ -272,21 +322,40 @@ export default function Industria() {
             <div className="bg-white p-4 rounded-lg shadow border border-[#e0e0e0]">
               <div className="flex items-center justify-between mb-1">
                 <h2 className="text-sm font-semibold text-[var(--color-text-secondary)]">
-                  Total Retirado
+                  Taxa de Aprovação
                 </h2>
                 <span className="text-xs font-medium text-[var(--color-primary-dark)]">
                   Mês atual
                 </span>
               </div>
-              <p className="text-4xl font-extrabold tracking-tight text-[var(--color-text-dark)]">
-                {totalRetiradoMes === null
+              <p
+                className={`text-4xl font-extrabold tracking-tight flex items-center gap-2 ${
+                  taxaAprovacao !== null && taxaAprovacao !== "Erro"
+                    ? taxaAprovacao >= 80
+                      ? "text-green-600"
+                      : taxaAprovacao >= 60
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                    : "text-[var(--color-text-dark)]"
+                }`}
+              >
+                {taxaAprovacao === null
                   ? "..."
-                  : `${totalRetiradoMes.toLocaleString(undefined, {
-                      maximumFractionDigits: 2,
-                    })} L`}
+                  : taxaAprovacao === "Erro"
+                  ? "Erro"
+                  : `${taxaAprovacao.toFixed(1)}%`}
+                {taxaAprovacao !== null && taxaAprovacao !== "Erro" && (
+                  <span className="text-2xl">
+                    {taxaAprovacao >= 80
+                      ? <FiCheckCircle />
+                      : taxaAprovacao >= 60
+                      ? <FiAlertTriangle />
+                      : <FiXCircle />}
+                  </span>
+                )}
               </p>
               <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
-                Volume comercializado no mês
+                Percentual de coletas aprovadas no mês
               </p>
             </div>
 

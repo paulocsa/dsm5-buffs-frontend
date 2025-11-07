@@ -59,9 +59,11 @@ const removerColetaPorId = async (id) => {
   return response.data;
 };
 
-export default {
+const coletaService = {
   listarColetasPorPropriedade,
   buscarColetaPorId,
   atualizarColetaPorId,
   removerColetaPorId,
 };
+
+export default coletaService;

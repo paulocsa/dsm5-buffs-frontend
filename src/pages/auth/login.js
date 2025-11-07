@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
@@ -28,11 +27,9 @@ export default function Login() {
     setErrors({});
     try {
       const data = await signin({ email, password });
-      // Supondo que o backend retorna access_token e refresh_token
       if (data.access_token) {
         localStorage.setItem("token", data.access_token);
         if (data.refresh_token) localStorage.setItem("refresh_token", data.refresh_token);
-        // Redirecionar para página protegida, ex: dashboard
         window.location.href = "/";
       } else {
         setErrors({ general: "Resposta inesperada do servidor." });
@@ -50,23 +47,27 @@ export default function Login() {
 
   return (
     <div className={`${styles.container} ${styles.loginPage}`}>
-      <div className={styles.imageSection}>
-        <Image
-          src="/images/bg2.png"
-          alt="Imagem de login"
-          className={styles.image}
-          width={500}
-          height={600}
-        />
-      </div>
       <div className={styles.formSection}>
         <div className={styles.formBox}>
+          
+          {/* Logo adicionado aqui */}
+          <div className={styles.logoContainer}>
+            <Image
+              src="/images/Logo-buffs.svg" // Ou o .png que preferir
+              alt="Logo Buff's"
+              width={150} // Ajuste o tamanho conforme necessário
+              height={70} // Ajuste o tamanho conforme necessário
+              priority
+            />
+          </div>
+
           <h1 className={styles.title}>Bem-Vindo!</h1>
           <p className={styles.description}>
             Faça login com os dados inseridos durante seu cadastro.
           </p>
 
           <form className={styles.form} onSubmit={handleSubmit} noValidate>
+
             {errors.general && (
               <div className={styles.error} style={{ marginBottom: 12 }}>{errors.general}</div>
             )}
@@ -138,6 +139,7 @@ export default function Login() {
               type="submit"
               variant="primary"
               size="full"
+              className={styles.loginButton}
               aria-busy={loading}
               disabled={loading}
             >
@@ -188,6 +190,10 @@ export default function Login() {
           </p>
         </div>
       </div>
+
+      {/* SEÇÃO DA IMAGEM (AGORA NA DIREITA) */}
+      {/* Esta div agora servirá apenas como container para o background-image do CSS */}
+      <div className={styles.imageSection}></div>
     </div>
   );
 }

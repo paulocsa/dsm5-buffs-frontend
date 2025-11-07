@@ -45,8 +45,10 @@ const removerRegistroZootecnico = async (idZootec) => {
   await del(`/dados-zootecnicos/${idZootec}`);
 };
 
-export default {
+const dadosZootecnicosService = {
   listarDadosZootecnicosPorBufalo,
   atualizarRegistroZootecnico,
   removerRegistroZootecnico,
 };
+
+export default dadosZootecnicosService;

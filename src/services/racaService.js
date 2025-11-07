@@ -10,6 +10,8 @@ const listarRacas = async () => {
   return response.data;
 };
 
-export default {
+const racaService = {
   listarRacas,
 };
+
+export default racaService;

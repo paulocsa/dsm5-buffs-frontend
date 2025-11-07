@@ -18,6 +18,8 @@ const listarEstoqueLeitePorPropriedade = async (idPropriedade, page = 1, limit =
   return response.data;
 };
 
-export default {
+const estoqueLeiteService = {
   listarEstoqueLeitePorPropriedade,
 };
+
+export default estoqueLeiteService;

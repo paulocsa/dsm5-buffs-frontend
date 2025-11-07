@@ -6,43 +6,9 @@ import { Building2, ChevronDown, X, Check } from "lucide-react";
 
 export default function PropertySelectorFloating() {
   const router = useRouter();
-
-  // evita flicker: aguarda router pronto antes de decidir renderizar
-  if (!router.isReady) return null;
-
-  // usa asPath (rota real) e normaliza (remove query e trailing slash)
-  const rawPath = router?.asPath || router?.pathname || "/";
-  const path = rawPath.split("?")[0].replace(/\/+$/, "") || "/";
-
-  // Não renderiza em telas de propriedade
-  {
-    // substitui a verificação simples por uma mais robusta:
-    // cobre /proprietario/propriedade, /proprietario/propriedades e também
-    // possíveis variações antigas /propriedade e /propriedades
-    const propriedadeRoutePatterns = [
-      /^\/proprietario\/propriedade(\/|$)/i,
-      /^\/proprietario\/propriedades(\/|$)/i,
-      /^\/propriedade(\/|$)/i,
-      /^\/propriedades(\/|$)/i
-    ];
-
-    const checkPath = (p = "") => {
-      try {
-        return propriedadeRoutePatterns.some((re) => re.test(p || ""));
-      } catch {
-        return false;
-      }
-    };
-
-    // verifica tanto o path real (asPath) quanto pathname/route (templates de rota)
-    const routeTemplate = router?.pathname || router?.route || "";
-    const isPropriedadeRoute = checkPath(path) || checkPath(routeTemplate);
-
-    if (isPropriedadeRoute) return null;
-  }
+  const propriedadeCtx = usePropriedade();
 
   // obter contexto de propriedade de forma tolerante a diferentes nomes de exportação
-  const propriedadeCtx = usePropriedade();
   const selectedPropriedadeId =
     propriedadeCtx?.selectedPropriedadeId ??
     propriedadeCtx?.propriedadeId ??
@@ -58,7 +24,7 @@ export default function PropertySelectorFloating() {
     null;
 
   // setter seguro: chama o setter do contexto se existir, senão grava em localStorage e emite evento
-  const setSelectedPropriedadeId = (id) => {
+  const setSelectedPropriedadeId = React.useCallback((id) => {
     try {
       if (typeof _rawSetter === "function") {
         _rawSetter(id);
@@ -74,11 +40,10 @@ export default function PropertySelectorFloating() {
     } catch (e) {
       // noop
     }
-  };
+  }, [_rawSetter]);
 
   const [propriedades, setPropriedades] = useState([]);
   const [loadingPropriedade, setLoadingPropriedade] = useState(false);
-
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 

@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
+import { useRouter } from "next/router";
+import { AuthProvider } from "@/contexts/authContext";
+import Layout from "@/layout/Layout";
 
 const PropriedadeContext = createContext(null);
 
