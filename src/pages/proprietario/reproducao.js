@@ -34,7 +34,8 @@ export default function Reproducao() {
 
   // Estado para análise de búfalas (fêmeas disponíveis para reprodução)
   const [femeasDisponiveis, setFemeasDisponiveis] = useState([]);
-  const [loadingFemeasDisponiveis, setLoadingFemeasDisponiveis] = useState(true);
+  const [loadingFemeasDisponiveis, setLoadingFemeasDisponiveis] =
+    useState(true);
 
   const filteredMales = males.filter(
     (m) =>
@@ -83,21 +84,23 @@ export default function Reproducao() {
           return;
         }
         // Busca até 100 touros ativos
-        const resMacho = await bufaloService.filtrarBufalosPorSexoStatusPropriedade(
-          "M",
-          propriedadeId,
-          true,
-          1,
-          100
-        );
+        const resMacho =
+          await bufaloService.filtrarBufalosPorSexoStatusPropriedade(
+            "M",
+            propriedadeId,
+            true,
+            1,
+            100
+          );
         // Busca até 100 matrizes ativas
-        const resFemea = await bufaloService.filtrarBufalosPorSexoStatusPropriedade(
-          "F",
-          propriedadeId,
-          true,
-          1,
-          100
-        );
+        const resFemea =
+          await bufaloService.filtrarBufalosPorSexoStatusPropriedade(
+            "F",
+            propriedadeId,
+            true,
+            1,
+            100
+          );
         setMales(Array.isArray(resMacho?.data) ? resMacho.data : []);
         setFemales(Array.isArray(resFemea?.data) ? resFemea.data : []);
       } catch (err) {
@@ -162,23 +165,29 @@ export default function Reproducao() {
         if (!ignore) {
           // O serviço já retorna response.data, então res já é o array
           const femeas = Array.isArray(res) ? res : [];
-          
+
           // Função para calcular score de prioridade para reprodução
           const calcularScore = (femea) => {
             let score = 0;
-                
+
             // 1. Fêmeas com histórico de lactação/reprodução (mais experientes)
             if (femea.ciclo_atual && femea.ciclo_atual.numero_ciclo > 0) {
               score += 30; // +30 pontos para fêmeas experientes
               // Bônus para múltiplos ciclos
               score += Math.min(femea.ciclo_atual.numero_ciclo * 5, 20);
             }
-            
+
             // 2. Tempo desde última cobertura (ideal: 60-180 dias)
             if (femea.dias_desde_ultima_cobertura) {
-              if (femea.dias_desde_ultima_cobertura >= 60 && femea.dias_desde_ultima_cobertura <= 180) {
+              if (
+                femea.dias_desde_ultima_cobertura >= 60 &&
+                femea.dias_desde_ultima_cobertura <= 180
+              ) {
                 score += 25; // Período ideal
-              } else if (femea.dias_desde_ultima_cobertura > 180 && femea.dias_desde_ultima_cobertura <= 365) {
+              } else if (
+                femea.dias_desde_ultima_cobertura > 180 &&
+                femea.dias_desde_ultima_cobertura <= 365
+              ) {
                 score += 15; // Ainda bom
               } else if (femea.dias_desde_ultima_cobertura > 365) {
                 score += 10; // Muito tempo sem cobertura
@@ -189,7 +198,7 @@ export default function Reproducao() {
                 score += 20; // Idade ideal para primeira cobertura
               }
             }
-            
+
             // 3. Idade ideal (24-144 meses = 2-12 anos)
             if (femea.idade_meses >= 36 && femea.idade_meses <= 120) {
               score += 20; // Idade produtiva ideal
@@ -198,12 +207,15 @@ export default function Reproducao() {
             } else if (femea.idade_meses > 120 && femea.idade_meses <= 144) {
               score += 10; // Mais velha, mas ainda produtiva
             }
-            
+
             // 4. Sem recomendações especiais = totalmente pronta
-            if (Array.isArray(femea.recomendacoes) && femea.recomendacoes.length === 0) {
+            if (
+              Array.isArray(femea.recomendacoes) &&
+              femea.recomendacoes.length === 0
+            ) {
               score += 15; // Sem restrições
             }
-            
+
             // 5. Status de lactação
             if (femea.ciclo_atual && femea.ciclo_atual.dias_em_lactacao) {
               // Ideal: já em lactação avançada (180+ dias)
@@ -211,15 +223,15 @@ export default function Reproducao() {
                 score += 10;
               }
             }
-            
+
             return score;
           };
-          
+
           // Ordenar fêmeas por score (melhor primeiro) e pegar as top 5
           const femeasOrdenadas = femeas
-            .map(f => ({ ...f, score: calcularScore(f) }))
+            .map((f) => ({ ...f, score: calcularScore(f) }))
             .sort((a, b) => b.score - a.score);
-          
+
           setFemeasDisponiveis(femeasOrdenadas);
         }
       } catch (e) {
@@ -236,8 +248,6 @@ export default function Reproducao() {
       ignore = true;
     };
   }, [propriedadeId]);
-
- 
 
   const recommendationsMock = [
     {
@@ -444,7 +454,8 @@ export default function Reproducao() {
                 Top 5 Búfalas para Reprodução
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                Classificadas por prontidão, idade, histórico e período ideal para cobertura.
+                Classificadas por prontidão, idade, histórico e período ideal
+                para cobertura.
               </p>
 
               <div className="overflow-x-auto">
@@ -474,7 +485,10 @@ export default function Reproducao() {
                   <tbody>
                     {loadingFemeasDisponiveis ? (
                       <tr>
-                        <td colSpan="6" className="p-8 text-center text-gray-500">
+                        <td
+                          colSpan="6"
+                          className="p-8 text-center text-gray-500"
+                        >
                           <div className="flex items-center justify-center gap-2">
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#CE7D0A]"></div>
                             <span>Carregando fêmeas disponíveis...</span>
@@ -483,23 +497,38 @@ export default function Reproducao() {
                       </tr>
                     ) : femeasDisponiveis.length === 0 ? (
                       <tr>
-                        <td colSpan="6" className="p-8 text-center text-gray-500">
+                        <td
+                          colSpan="6"
+                          className="p-8 text-center text-gray-500"
+                        >
                           Nenhuma fêmea disponível para reprodução.
                         </td>
                       </tr>
                     ) : (
                       femeasDisponiveis.slice(0, 5).map((femea, i) => {
-                        const rankBadge = i === 0 ? "1º" : i === 1 ? "2º" : i === 2 ? "3º" : `${i + 1}º`;
-                        const rankBadgeColor = 
-                          i === 0 ? "bg-yellow-500 text-white" :
-                          i === 1 ? "bg-gray-400 text-white" :
-                          i === 2 ? "bg-orange-700 text-white" :
-                          "bg-gray-300 text-gray-700";
-                        const scoreColor = 
-                          femea.score >= 80 ? "text-green-600 font-bold" :
-                          femea.score >= 60 ? "text-orange-600 font-semibold" :
-                          "text-gray-600";
-                        
+                        const rankBadge =
+                          i === 0
+                            ? "1º"
+                            : i === 1
+                            ? "2º"
+                            : i === 2
+                            ? "3º"
+                            : `${i + 1}º`;
+                        const rankBadgeColor =
+                          i === 0
+                            ? "bg-yellow-500 text-white"
+                            : i === 1
+                            ? "bg-gray-400 text-white"
+                            : i === 2
+                            ? "bg-orange-700 text-white"
+                            : "bg-gray-300 text-gray-700";
+                        const scoreColor =
+                          femea.score >= 80
+                            ? "text-green-600 font-bold"
+                            : femea.score >= 60
+                            ? "text-orange-600 font-semibold"
+                            : "text-gray-600";
+
                         return (
                           <tr
                             key={femea.id_bufalo || i}
@@ -513,34 +542,44 @@ export default function Reproducao() {
                           >
                             <td className="p-3 text-center text-gray-800 text-base font-bold">
                               <div className="flex items-center justify-center">
-                                <span className={`px-2 py-1 rounded-md text-xs font-bold ${rankBadgeColor}`}>
+                                <span
+                                  className={`px-2 py-1 rounded-md text-xs font-bold ${rankBadgeColor}`}
+                                >
                                   {rankBadge}
                                 </span>
                               </div>
                             </td>
                             <td className="p-3 text-left text-gray-800 text-sm font-semibold">
                               <div>
-                                <div>{femea.nome || `Fêmea #${femea.id_bufalo}`}</div>
+                                <div>
+                                  {femea.nome || `Fêmea #${femea.id_bufalo}`}
+                                </div>
                                 {femea.brinco && (
-                                  <div className="text-xs text-gray-500">{femea.brinco}</div>
+                                  <div className="text-xs text-gray-500">
+                                    {femea.brinco}
+                                  </div>
                                 )}
                               </div>
                             </td>
                             <td className="p-3 text-center text-gray-800 text-sm">
-                              {femea.idade_meses 
-                                ? `${Math.floor(femea.idade_meses / 12)}a ${femea.idade_meses % 12}m` 
+                              {femea.idade_meses
+                                ? `${Math.floor(femea.idade_meses / 12)}a ${
+                                    femea.idade_meses % 12
+                                  }m`
                                 : "-"}
                             </td>
                             <td className="p-3 text-center text-gray-800 text-sm">
                               {femea.ciclo_atual?.numero_ciclo || "1º"}
                             </td>
                             <td className="p-3 text-center text-gray-700 text-xs">
-                              {femea.dias_desde_ultima_cobertura 
+                              {femea.dias_desde_ultima_cobertura
                                 ? `${femea.dias_desde_ultima_cobertura} dias`
                                 : "Primeira"}
                             </td>
                             <td className="p-3 text-center">
-                              <span className={`text-base font-bold ${scoreColor}`}>
+                              <span
+                                className={`text-base font-bold ${scoreColor}`}
+                              >
                                 {femea.score || 0}
                               </span>
                             </td>
@@ -888,7 +927,8 @@ export default function Reproducao() {
                       <span className="text-sm text-gray-600">
                         Parentesco dos Pais
                       </span>
-                      {simulationResult.raw?.detalhes?.tem_parentesco_direto && (
+                      {simulationResult.raw?.detalhes
+                        ?.tem_parentesco_direto && (
                         <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded">
                           ⚠️
                         </span>
@@ -927,7 +967,8 @@ export default function Reproducao() {
                     className={`rounded-lg p-5 border-2 ${
                       simulationResult.raw?.risco_consanguinidade === "Baixo"
                         ? "bg-green-50 border-green-300"
-                        : simulationResult.raw?.risco_consanguinidade === "Médio"
+                        : simulationResult.raw?.risco_consanguinidade ===
+                          "Médio"
                         ? "bg-yellow-50 border-yellow-300"
                         : simulationResult.raw?.risco_consanguinidade === "Alto"
                         ? "bg-orange-50 border-orange-300"
@@ -940,16 +981,20 @@ export default function Reproducao() {
                       </span>
                       <span
                         className={`text-lg font-bold px-4 py-1.5 rounded-full ${
-                          simulationResult.raw?.risco_consanguinidade === "Baixo"
+                          simulationResult.raw?.risco_consanguinidade ===
+                          "Baixo"
                             ? "bg-green-600 text-white"
-                            : simulationResult.raw?.risco_consanguinidade === "Médio"
+                            : simulationResult.raw?.risco_consanguinidade ===
+                              "Médio"
                             ? "bg-yellow-600 text-white"
-                            : simulationResult.raw?.risco_consanguinidade === "Alto"
+                            : simulationResult.raw?.risco_consanguinidade ===
+                              "Alto"
                             ? "bg-orange-600 text-white"
                             : "bg-red-600 text-white"
                         }`}
                       >
-                        {simulationResult.raw?.risco_consanguinidade || "Desconhecido"}
+                        {simulationResult.raw?.risco_consanguinidade ||
+                          "Desconhecido"}
                       </span>
                     </div>
                     <div className="flex items-start gap-2">
@@ -958,20 +1003,29 @@ export default function Reproducao() {
                           Recomendação
                         </p>
                         <p className="text-sm font-semibold text-gray-900 leading-relaxed">
-                          {simulationResult.raw?.recomendacao || "Sem recomendação disponível"}
+                          {simulationResult.raw?.recomendacao ||
+                            "Sem recomendação disponível"}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                 
-
                   {/* Predição de Produção */}
                   {simulationResult.raw?.predicao_producao_femea && (
                     <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-5 border border-indigo-200">
                       <div className="flex items-center gap-2 mb-2">
-                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        <svg
+                          className="w-5 h-5 text-indigo-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                          />
                         </svg>
                         <span className="text-sm font-semibold text-gray-700">
                           Predição de Produção da Fêmea
